@@ -20,6 +20,19 @@ impl Distro {
             bitness: info.bitness(),
             init: Init::Unknown,
             package_manager: PackageManager::Unknown,
+            family: Family::Unknown,
+        }
+    }
+
+    pub fn get_distro_info() -> Self {
+        let info = os_ingo::get();
+        Distro {
+            os_type: info.os_type(),
+            version: info.version(),
+            bitness: info.bitness(),
+            init: Init::get_init(),
+            package_manager: PackageManager::get_package_manager(),
+            family: Family::get_family(info.os_type()),
         }
     }
 
