@@ -2,6 +2,12 @@
 name = "linux_details"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+homepage = "https://github.com/martintc/linux_details"
+repository = "https://github.com/martintc/linux_details"
+readme = "README.md"
+keywords = ["system", "linux", "details"]
+categories = ["command-line-utilities"]
 
 [[bin]]
 name = "linux_details"
