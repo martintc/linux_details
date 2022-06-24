@@ -71,4 +71,8 @@ impl Distro {
     pub fn get_package_manager(&self) -> PackageManager {
         self.package_manager
     }
+
+    pub fn get_family(&self) -> Family {
+        self.family
+    }
 }
