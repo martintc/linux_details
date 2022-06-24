@@ -1,8 +1,8 @@
 use std::fmt::{self, Display, Formatter};
 use os_info::{Type, Version, Bitness};
-use crate::distro::family::Family;
-use crate::distro::init::Init;
-use crate::distro::package_manager::PackageManager;
+use crate::family::Family;
+use crate::init::Init;
+use crate::package_manager::PackageManager;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Distro {
