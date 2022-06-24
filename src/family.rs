@@ -1,7 +1,7 @@
 use std::fmt::{self, Display, Formatter};
 use os_info::Type;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Family {
     ArchBased,
     DebianBased,
