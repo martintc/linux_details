@@ -47,7 +47,7 @@ impl Distro {
             //version: info.version().clone(),
             bitness: info.bitness(),
             init: Init::get_init(),
-            package_manager: PackageManager::get_package_manager(),
+            package_manager: PackageManager::get_package_manager(info.os_type()),
             family: Family::get_family(info.os_type()),
         })
     }
