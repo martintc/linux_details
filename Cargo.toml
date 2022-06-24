@@ -1,24 +1,4 @@
-[package]
-name = "linux_details"
-version = "0.1.0"
-edition = "2021"
-description = "A library to gather system information of a linux distro during runtime"
-license = "MIT"
-homepage = "https://github.com/martintc/linux_details"
-repository = "https://github.com/martintc/linux_details"
-readme = "README.md"
-keywords = ["system", "linux", "details"]
-categories = ["command-line-utilities"]
+[workspace]
+members = ["linux_details", "linux_details_macros"]
 
-[[bin]]
-name = "linux_details"
-path = "src/main.rs"
-
-[lib]
-name = "linux_details"
-path = "src/lib.rs"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-os_info = "3.4.0"
+resolver = "2"

@@ -1,4 +1,5 @@
 use std::fmt::{self, Display, Formatter};
+
 use os_info::Type;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -37,7 +38,7 @@ impl Display for Family {
 }
 
 impl Family {
-    pub fn get_family(os_type: os_info::Type) -> Family {
+    pub fn get_family(os_type: Type) -> Family {
         match os_type {
             Type::Alpine => Family::Independent,
             Type::Amazon => Family::RedhatBased,
@@ -65,4 +66,3 @@ impl Family {
         }
     }
 }
-
