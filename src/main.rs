@@ -7,6 +7,7 @@ fn main() {
             println!("{}", distro.get_init());
             println!("{}", distro.get_init());
             println!("{}", distro.get_package_manager());
+            println!("{}", distro.get_family());
         },
         None => {
             println!("An issue detecting a distro");
