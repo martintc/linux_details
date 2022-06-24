@@ -5,7 +5,6 @@ fn main() {
         Some(distro) => {
             println!("{}", distro.get_type());
             println!("{}", distro.get_init());
-            println!("{}", distro.get_init());
             println!("{}", distro.get_package_manager());
             println!("{}", distro.get_family());
         },
