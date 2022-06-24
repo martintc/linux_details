@@ -68,7 +68,7 @@ impl Distro {
         self.init
     }
 
-    pub fn get_package_managert(&self) -> PackageManager {
+    pub fn get_package_manager(&self) -> PackageManager {
         self.package_manager
     }
 }
