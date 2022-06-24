@@ -32,3 +32,9 @@ impl Display for PackageManager {
         }
     }
 }
+
+impl PackageManager {
+    pub fn get_package_manager() -> PackageManager {
+        PackageManager::Unknown
+    }
+}

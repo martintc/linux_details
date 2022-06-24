@@ -32,3 +32,9 @@ impl Display for Init {
         }
     }
 }
+
+impl Init {
+    pub fn get_init() -> Init {
+        Init::Unknown
+    }
+}
