@@ -4,6 +4,7 @@ use std::fmt::{self, Display, Formatter};
 pub enum PackageManager {
     Aptitude,
     Dnf,
+    Eopkg,
     Pacman,
     Portage,
     Unknown,
@@ -22,6 +23,7 @@ impl Display for PackageManager {
         match *self {
             PackageManager::Aptitude => write!(f, "aptitde"),
             PackageManager::Dnf => write!(f, "dnf"),
+            PackageManager::Eopkg => write!(f, "eopkg"),
             PackageManager::Pacman => write!(f, "pacman"),
             PackageManager::Portage => write!(f, "portage"),
             PackageManager::Yum => write!(f, "yum"),
