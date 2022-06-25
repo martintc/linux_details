@@ -21,6 +21,6 @@ on:
             toolchain: stable
             override: true
           
-        - run: cargo publish --token ${CRATES_TOKEN}
+        - run: cargo publish --token ${CRATES_TOKEN} --manifest-path ./linux_details/
           env:
             CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
