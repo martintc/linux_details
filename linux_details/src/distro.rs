@@ -12,48 +12,18 @@ pub struct Distro {
     family: Family,
 }
 
-fn is_linux() -> bool {
-    let info = os_info::get();
-    matches!(
-        info.os_type(),
-        Type::Amazon
-            | Type::Alpine
-            | Type::Android
-            | Type::Arch
-            | Type::CentOS
-            | Type::Debian
-            | Type::EndeavourOS
-            | Type::Fedora
-            | Type::Gentoo
-            | Type::Linux
-            | Type::Manjaro
-            | Type::Mint
-            | Type::NixOS
-            | Type::openSUSE
-            | Type::Redhat
-            | Type::Pop
-            | Type::OracleLinux
-            | Type::RedHatEnterprise
-            | Type::Solus
-            | Type::SUSE
-            | Type::Ubuntu
-    )
-}
-
 impl Distro {
-    pub fn unknown() -> Option<Self> {
-        if !is_linux() {
-            return None;
-        }
+    pub fn unknown() -> Self {
         let info = os_info::get();
-        Some(Distro {
+
+        Distro {
             os_type: info.os_type(),
             version: info.version().clone(),
             bitness: info.bitness(),
             init: Init::Unknown,
             package_manager: PackageManager::Unknown,
             family: Family::Unknown,
-        })
+        }
     }
 
     pub fn get_distro_info() -> Option<Self> {
