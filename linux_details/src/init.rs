@@ -1,8 +1,8 @@
 use enum_iterator::Sequence;
 
-use linux_details_macros::Init;
+use linux_details_macros::LinuxDetailsEnum;
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Init, Sequence)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, LinuxDetailsEnum, Sequence)]
 pub enum Init {
     #[default_variant]
     Unknown,
@@ -13,6 +13,13 @@ pub enum Init {
     S6,
     Systemd,
     SysV,
+}
+
+impl Init {
+    pub fn get_init() -> Self {
+        // TODO: need to implement a way to get the init system of the current OS
+        Self::default()
+    }
 }
 
 mod tests {

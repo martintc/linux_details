@@ -50,7 +50,19 @@ struct LinuxDetailsEnum {
     default_display: proc_macro2::TokenStream,
 }
 
-fn linux_details_enum(input: TokenStream) -> LinuxDetailsEnum {
+#[proc_macro_derive(LinuxDetailsEnum, attributes(default_variant, os_types, display_name))]
+pub fn linux_details_enum(input: TokenStream) -> TokenStream {
+    let LinuxDetailsEnum {
+        default_display, ..
+    } = linux_details_enum_internal(input);
+
+    (quote! {
+        #default_display
+    })
+    .into()
+}
+
+fn linux_details_enum_internal(input: TokenStream) -> LinuxDetailsEnum {
     let DeriveInput {
         ident: enum_name,
         data,
@@ -188,7 +200,7 @@ pub fn package_manager(input: TokenStream) -> TokenStream {
         os_type_variant,
         default_ident,
         default_display,
-    } = linux_details_enum(input);
+    } = linux_details_enum_internal(input);
 
     let get_package_manager = {
         let arms = os_type_variant.iter().map(|(os_type, variant)| {
@@ -216,32 +228,6 @@ pub fn package_manager(input: TokenStream) -> TokenStream {
     .into()
 }
 
-#[proc_macro_derive(Init, attributes(default_variant, os_types, display_name))]
-pub fn init(input: TokenStream) -> TokenStream {
-    let LinuxDetailsEnum {
-        name,
-        default_ident,
-        default_display,
-        ..
-    } = linux_details_enum(input);
-
-    let get_init = quote! {
-        impl #name {
-            pub fn get_init() -> #name {
-                // TODO(tukanoid): might actually need to move it out of this proc macro cuz we'll
-                // need to implement a way to get the init system of the current OS
-                #name::#default_ident
-            }
-        }
-    };
-
-    (quote! {
-        #get_init
-        #default_display
-    })
-    .into()
-}
-
 #[proc_macro_derive(Family, attributes(default_variant, os_types, display_name))]
 pub fn family(input: TokenStream) -> TokenStream {
     let LinuxDetailsEnum {
@@ -249,7 +235,7 @@ pub fn family(input: TokenStream) -> TokenStream {
         os_type_variant,
         default_ident,
         default_display,
-    } = linux_details_enum(input);
+    } = linux_details_enum_internal(input);
 
     let get_family = {
         let arms = os_type_variant.iter().map(|(os_type, variant)| {
