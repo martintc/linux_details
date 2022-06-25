@@ -1,26 +1,21 @@
-on:
-  push:
-    tags:
-      - '*'
-  workflow_dispatch:
+on: [workflow_dispatch]
+name: Publish
 
-  name: Publish
+jobs:
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v2
 
-  jobs:
-    publish:
-      name: Publish
-      runs-on: ubuntu-latest
-      steps:
-        - name: Checkout sources
-          uses: actions/checkout@v2
-
-        - name: Install stable toolchain
-          uses: actions-rs/toolchain@v1
-          with:
-            profile: minimal
-            toolchain: stable
-            override: true
-          
-        - run: cargo publish --token ${CRATES_TOKEN} --manifest-path ./linux_details/
-          env:
-            CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+    - name: Install stable toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        override: true
+      
+    - run: cargo publish --token ${CRATES_TOKEN} --manifest-path ./linux_details/
+      env:
+        CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
