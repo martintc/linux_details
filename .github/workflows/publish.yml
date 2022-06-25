@@ -1,6 +1,5 @@
 on: [workflow_dispatch]
-
-  name: Publish
+name: Publish
 
   jobs:
     publish:
