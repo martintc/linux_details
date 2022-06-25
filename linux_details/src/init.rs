@@ -1,40 +1,43 @@
-use std::fmt::{self, Display, Formatter};
+use enum_iterator::Sequence;
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+use linux_details_macros::Init;
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Init, Sequence)]
 pub enum Init {
+    #[default_variant]
+    Unknown,
     Launchd,
     Openrc,
     Runnit,
     Upstart,
-    Unknown,
     S6,
     Systemd,
     SysV,
 }
 
-impl Default for Init {
-    fn default() -> Self {
-        Init::Unknown
-    }
-}
+mod tests {
+    #[allow(unused_imports)]
+    use super::Init;
 
-impl Display for Init {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        match *self {
-            Init::Launchd => write!(f, "launchd"),
-            Init::Openrc => write!(f, "openrc"),
-            Init::Runnit => write!(f, "runnit"),
-            Init::Upstart => write!(f, "upstart"),
-            Init::S6 => write!(f, "s6"),
-            Init::Systemd => write!(f, "systemd"),
-            Init::SysV => write!(f, "sysv"),
-            _ => write!(f, "{:?}", self),
+    #[test]
+    fn default() {
+        let init = Init::default();
+        assert_eq!(init, Init::Unknown);
+    }
+
+    #[test]
+    fn display() {
+        for variant in enum_iterator::all::<Init>() {
+            assert_eq!(
+                format!("{:?}", variant).to_lowercase().as_str(),
+                format!("{}", variant).as_str()
+            );
         }
     }
-}
 
-impl Init {
-    pub fn get_init() -> Init {
-        Init::Unknown
+    #[test]
+    fn get_init() {
+        let package_manager = Init::get_init();
+        assert_eq!(package_manager, Init::Unknown);
     }
 }
