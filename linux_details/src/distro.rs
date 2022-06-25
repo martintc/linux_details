@@ -26,19 +26,17 @@ impl Distro {
         }
     }
 
-    pub fn get_distro_info() -> Option<Self> {
-        if !is_linux() {
-            return None;
-        }
+    pub fn get_distro_info() -> Self {
         let info = os_info::get();
-        Some(Distro {
+
+        Distro {
             os_type: info.os_type(),
             version: info.version().clone(),
             bitness: info.bitness(),
             init: Init::get_init(),
             package_manager: PackageManager::get_package_manager(info.os_type()),
             family: Family::get_family(info.os_type()),
-        })
+        }
     }
 
     pub fn get_type(&self) -> Type {

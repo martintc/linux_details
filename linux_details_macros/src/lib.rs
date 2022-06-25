@@ -228,6 +228,8 @@ pub fn init(input: TokenStream) -> TokenStream {
     let get_init = quote! {
         impl #name {
             pub fn get_init() -> #name {
+                // TODO(tukanoid): might actually need to move it out of this proc macro cuz we'll
+                // need to implement a way to get the init system of the current OS
                 #name::#default_ident
             }
         }
