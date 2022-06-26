@@ -1,6 +1,6 @@
 [package]
 name = "linux_details"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "A library to gather system information of a linux distro during runtime"
 license = "MIT"
