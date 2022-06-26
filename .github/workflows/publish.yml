@@ -15,7 +15,9 @@ jobs:
         profile: minimal
         toolchain: stable
         override: true
-      
+
+    - run: cargo publish --token ${CRATES_TOKEN} -- manifest-path ./linux_details_macros/Cargo.toml
+
     - run: cargo publish --token ${CRATES_TOKEN} --manifest-path ./linux_details/Cargo.toml
       env:
         CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
