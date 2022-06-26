@@ -1,0 +1,21 @@
+on: [workflow_dispatch]
+name: Publish-linux_details_macros
+
+jobs:
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v2
+
+    - name: Install stable toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        override: true
+
+    - run: cargo publish --token ${CRATES_TOKEN} --manifest-path ./linux_details_macros/Cargo.toml
+      env:
+        CRATES_TOKEN: ${{ secrets.CRATES_TOKEN}}
