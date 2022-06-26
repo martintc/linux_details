@@ -35,9 +35,10 @@ struct DisplayName {
 impl Parse for DisplayName {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let name;
+        let paren = parenthesized!(name in input);
 
         Ok(Self {
-            _paren: parenthesized!(name in input),
+            _paren: paren,
             name: name.parse()?,
         })
     }
