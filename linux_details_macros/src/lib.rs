@@ -11,12 +11,12 @@ use syn::{
     AttrStyle, Attribute, Data, DataEnum, DeriveInput, LitStr, Token,
 };
 
-struct OsTypes {
+struct ParenPunctuated {
     _paren: Paren,
     types: Punctuated<Ident, Token![,]>,
 }
 
-impl Parse for OsTypes {
+impl Parse for ParenPunctuated {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let types;
 
@@ -46,12 +46,16 @@ impl Parse for DisplayName {
 
 struct LinuxDetailsEnum {
     name: Ident,
-    os_type_variant: Vec<(Ident, Ident)>,
+    os_type_variants: HashMap<Ident, Vec<Ident>>,
+    main_in_os_types: HashMap<Ident, Vec<Ident>>,
     default_ident: Ident,
     default_display: proc_macro2::TokenStream,
 }
 
-#[proc_macro_derive(LinuxDetailsEnum, attributes(default_variant, os_types, display_name))]
+#[proc_macro_derive(
+    LinuxDetailsEnum,
+    attributes(default_variant, os_types, display_name, main_in_os_types)
+)]
 pub fn linux_details_enum(input: TokenStream) -> TokenStream {
     let LinuxDetailsEnum {
         default_display, ..
@@ -76,7 +80,8 @@ fn linux_details_enum_internal(input: TokenStream) -> LinuxDetailsEnum {
 
     let mut idents = vec![];
     let mut strs = vec![];
-    let mut variant_os_types: HashMap<Ident, Vec<Ident>> = HashMap::new();
+    let mut os_type_variants: HashMap<Ident, Vec<Ident>> = HashMap::new();
+    let mut main_in_os_types: HashMap<Ident, Vec<Ident>> = HashMap::new();
     let mut default_ident = None;
     let mut display_names = HashMap::new();
 
@@ -111,20 +116,29 @@ fn linux_details_enum_internal(input: TokenStream) -> LinuxDetailsEnum {
                             }
                         }
                         "os_types" => {
-                            let types: OsTypes = syn::parse(tokens.into()).unwrap();
+                            let types: ParenPunctuated = syn::parse(tokens.into()).unwrap();
 
                             for os_type in types.types {
-                                let vec = variant_os_types.entry(ident.clone()).or_default();
-
-                                if !vec.contains(&os_type) {
-                                    vec.push(os_type);
-                                }
+                                os_type_variants
+                                    .entry(os_type)
+                                    .or_default()
+                                    .push(ident.clone());
                             }
                         }
                         "display_name" => {
                             let DisplayName { name, .. } = syn::parse(tokens.into()).unwrap();
 
                             display_names.insert(ident_str.clone(), name.value());
+                        }
+                        "main_in_os_types" => {
+                            let types: ParenPunctuated = syn::parse(tokens.into()).unwrap();
+
+                            for os_type in types.types {
+                                main_in_os_types
+                                    .entry(ident.clone())
+                                    .or_default()
+                                    .push(os_type);
+                            }
                         }
                         _ => {}
                     }
@@ -176,46 +190,59 @@ fn linux_details_enum_internal(input: TokenStream) -> LinuxDetailsEnum {
 
     LinuxDetailsEnum {
         name: enum_name,
-        os_type_variant: if variant_os_types.is_empty() {
-            vec![]
-        } else {
-            variant_os_types
-                .iter()
-                .flat_map(|(variant, os_types)| {
-                    os_types
-                        .iter()
-                        .map(|os_type| (os_type.clone(), variant.clone()))
-                        .collect::<Vec<_>>()
-                })
-                .collect::<Vec<_>>()
-        },
+
+        os_type_variants,
         default_ident,
         default_display,
+        main_in_os_types,
     }
 }
 
-#[proc_macro_derive(PackageManager, attributes(default_variant, os_types, display_name))]
+#[proc_macro_derive(
+    PackageManager,
+    attributes(default_variant, os_types, display_name, main_in_os_types)
+)]
 pub fn package_manager(input: TokenStream) -> TokenStream {
     let LinuxDetailsEnum {
         name,
-        os_type_variant,
+        os_type_variants,
+        main_in_os_types,
         default_ident,
         default_display,
     } = linux_details_enum_internal(input);
 
-    let get_package_manager = {
-        let arms = os_type_variant.iter().map(|(os_type, variant)| {
+    let available_package_managers = {
+        let arms = os_type_variants.iter().map(|(os_type, package_managers)| {
             quote! {
-                os_info::Type::#os_type => #name::#variant
+                os_info::Type::#os_type => vec![#(#name::#package_managers),*],
             }
         });
 
         quote! {
             impl #name {
-                pub fn get_package_manager(os_type: os_info::Type) -> Self {
+                pub fn available_package_managers(os_type: os_info::Type) -> Vec<Self> {
                     match os_type {
                         #(#arms),*,
-                        _ => #name::#default_ident
+                        _ => vec![],
+                    }
+                }
+            }
+        }
+    };
+
+    let main_package_manager = {
+        let arms = main_in_os_types.iter().map(|(package_manager, os_types)| {
+            quote! {
+                #(#os_types)|* => #name::#package_manager
+            }
+        });
+
+        quote! {
+            impl #name {
+                pub fn main_package_manager(os_type: os_info::Type) -> Self {
+                    match os_type {
+                        #(#arms),*,
+                        _ => #name::#default_ident,
                     }
                 }
             }
@@ -223,7 +250,8 @@ pub fn package_manager(input: TokenStream) -> TokenStream {
     };
 
     (quote! {
-        #get_package_manager
+        #available_package_managers
+        #main_package_manager
         #default_display
     })
     .into()
@@ -233,16 +261,21 @@ pub fn package_manager(input: TokenStream) -> TokenStream {
 pub fn family(input: TokenStream) -> TokenStream {
     let LinuxDetailsEnum {
         name,
-        os_type_variant,
+        os_type_variants,
         default_ident,
         default_display,
+        ..
     } = linux_details_enum_internal(input);
 
     let get_family = {
-        let arms = os_type_variant.iter().map(|(os_type, variant)| {
-            quote! {
-                os_info::Type::#os_type => #name::#variant
-            }
+        let arms = os_type_variants.iter().flat_map(|(os_type, variants)| {
+            variants.iter().cloned().map(|variant| {
+                let os_type = os_type.clone();
+
+                quote! {
+                    os_info::Type::#os_type => #name::#variant
+                }
+            })
         });
 
         quote! {

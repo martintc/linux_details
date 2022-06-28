@@ -1,7 +1,5 @@
 use enum_iterator::Sequence;
 
-use linux_details_macros::LinuxDetailsEnum;
-
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, LinuxDetailsEnum, Sequence)]
 pub enum Init {
     #[default_variant]

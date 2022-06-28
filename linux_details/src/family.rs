@@ -1,7 +1,5 @@
 use enum_iterator::Sequence;
 
-use linux_details_macros::Family;
-
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Family, Sequence)]
 pub enum Family {
     #[default_variant]
