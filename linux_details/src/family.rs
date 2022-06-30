@@ -1,34 +1,38 @@
 use enum_iterator::Sequence;
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Family, Sequence)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, LDEnum, Sequence)]
 pub enum Family {
-    #[default_variant]
+    #[ld_enum_conf(is_default_variant)]
     Unknown,
-    #[display_name("arch-based")]
-    #[os_types(Arch, EndeavourOS, Manjaro)]
+    #[ld_enum_conf(display_name = "arch-based", os_types(Arch, EndeavourOS, Manjaro))]
     ArchBased,
-    #[display_name("debian-based")]
-    #[os_types(Debian, Raspbian)]
+    #[ld_enum_conf(display_name = "debian-based", os_types(Debian, Raspbian))]
     DebianBased,
-    #[display_name("gentoo-based")]
-    #[os_types(Gentoo)]
+    #[ld_enum_conf(display_name = "gentoo-based", os_types(Gentoo))]
     GentooBased,
-    #[os_types(Alpine, Android, Linux, NixOS, Solus)]
+    #[ld_enum_conf(os_types(Alpine, Android, Linux, NixOS, Solus))]
     Independent,
-    #[display_name("redhat-based")]
-    #[os_types(Amazon, CentOS, Fedora, OracleLinux, RedHatEnterprise, Redhat)]
+    #[ld_enum_conf(
+        display_name = "redhat-based",
+        os_types(Amazon, CentOS, Fedora, OracleLinux, RedHatEnterprise, Redhat)
+    )]
     RedhatBased,
-    #[display_name("slackware-based")]
+    #[ld_enum_conf(display_name = "slackware-based")]
     SlackwareBased,
-    #[display_name("suse-based")]
-    #[os_types(openSUSE, SUSE)]
+    #[ld_enum_conf(display_name = "suse-based", os_types(openSUSE, SUSE))]
     SuseBased,
-    #[display_name("ubuntu-based")]
-    #[os_types(Ubuntu, Mint, Pop)]
+    #[ld_enum_conf(display_name = "ubuntu-based", os_types(Ubuntu, Mint, Pop))]
     UbuntuBased,
 }
 
-mod tests {
+impl Family {
+    pub fn get_family(os_type: os_info::Type) -> Self {
+        // TODO(tukanoid): need to implement a way to get the family of the current OS
+        Self::Unknown
+    }
+}
+
+/*mod tests {
     #[allow(unused_imports)]
     use super::Family;
 
@@ -85,4 +89,4 @@ mod tests {
             UbuntuBased => [Ubuntu, Mint, Pop],
         ];
     }
-}
+}*/

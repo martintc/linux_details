@@ -1,41 +1,41 @@
 use enum_iterator::Sequence;
 
 // TODO: do bit more research on this part to set proper defaults
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, PackageManager, Sequence)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, LDEnum, Sequence)]
 pub enum PackageManager {
-    #[default_variant]
+    #[ld_enum_conf(is_default_variant)]
     Unknown,
-    #[os_types(Alpine)]
-    #[main_in_os_types(Alpine)]
+    #[ld_enum_conf(os_types(Alpine), default_in_os_types(Alpine))]
     Apk,
-    #[os_types(Debian, Mint, Pop, Raspbian, Ubuntu)]
-    #[main_in_os_types(Debian, Mint, Pop, Raspbian, Ubuntu)]
+    #[ld_enum_conf(
+        os_types(Debian, Mint, Pop, Raspbian, Ubuntu),
+        default_in_os_types(Debian, Mint, Pop, Raspbian, Ubuntu)
+    )]
     Apt,
-    #[os_types(Debian, Mint, Pop, Raspbian, Ubuntu)]
+    #[ld_enum_conf(os_types(Debian, Mint, Pop, Raspbian, Ubuntu))]
     Aptitude,
-    #[os_types(CentOS, Fedora)]
-    #[main_in_os_types(CentOS, Fedora)]
+    #[ld_enum_conf(os_types(CentOS, Fedora), default_in_os_types(CentOS, Fedora))]
     Dnf,
-    #[os_types(Amazon, OracleLinux, RedHatEnterprise, Redhat)]
-    #[main_in_os_types(Amazon, OracleLinux, RedHatEnterprise, Redhat)]
+    #[ld_enum_conf(
+        os_types(Amazon, OracleLinux, RedHatEnterprise, Redhat),
+        default_in_os_types(Amazon, OracleLinux, RedHatEnterprise, Redhat)
+    )]
     Yum,
-    #[os_types(openSUSE, SUSE)]
-    #[main_in_os_types(openSUSE, SUSE)]
+    #[ld_enum_conf(os_types(openSUSE, SUSE), default_in_os_types(openSUSE, SUSE))]
     Zypper,
-    #[os_types(Solus)]
-    #[main_in_os_types(Solus)]
+    #[ld_enum_conf(os_types(Solus), default_in_os_types(Solus))]
     Eopkg,
-    #[os_types(NixOS)]
-    #[main_in_os_types(NixOS)]
+    #[ld_enum_conf(os_types(NixOS), default_in_os_types(NixOS))]
     Nix,
-    #[os_types(Arch, EndeavourOS, Manjaro)]
-    #[main_in_os_types(Arch, EndeavourOS, Manjaro)]
+    #[ld_enum_conf(
+        os_types(Arch, EndeavourOS, Manjaro),
+        default_in_os_types(Arch, EndeavourOS, Manjaro)
+    )]
     Pacman,
-    #[os_types(Gentoo)]
-    #[main_in_os_types(Gentoo)]
+    #[ld_enum_conf(os_types(Gentoo), default_in_os_types(Gentoo))]
     Portage,
 
-    #[os_types(
+    #[ld_enum_conf(os_types(
         Alpine,
         Arch,
         CentOS,
@@ -52,9 +52,9 @@ pub enum PackageManager {
         Raspbian,
         Solus,
         Ubuntu
-    )]
+    ))]
     Flatpak,
-    #[os_types(
+    #[ld_enum_conf(os_types(
         Arch,
         CentOS,
         Debian,
@@ -69,11 +69,11 @@ pub enum PackageManager {
         Ubuntu,
         RedHatEnterprise,
         Redhat
-    )]
+    ))]
     Snap,
 }
 
-mod tests {
+/*mod tests {
     #[allow(unused_imports)]
     use super::PackageManager;
 
@@ -97,4 +97,4 @@ mod tests {
     fn get_package_manager() {
         todo!("Make the test to make sure everything is not fucked")
     }
-}
+}*/

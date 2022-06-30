@@ -8,7 +8,9 @@ pub struct Distro {
     version: Version,
     bitness: Bitness,
     init: Init,
-    package_manager: PackageManager,
+    supported_package_managers: Vec<PackageManager>,
+    available_package_managers: Vec<PackageManager>,
+    default_package_manager: PackageManager,
     family: Family,
 }
 
@@ -21,7 +23,9 @@ impl Distro {
             version: info.version().clone(),
             bitness: info.bitness(),
             init: Init::Unknown,
-            package_manager: PackageManager::Unknown,
+            supported_package_managers: vec![],
+            available_package_managers: vec![],
+            default_package_manager: PackageManager::Unknown,
             family: Family::Unknown,
         }
     }
@@ -34,31 +38,49 @@ impl Distro {
             version: info.version().clone(),
             bitness: info.bitness(),
             init: Init::get_init(),
-            package_manager: PackageManager::get_package_manager(info.os_type()),
+            supported_package_managers: vec![], // PackageManager::supported_package_managers(info.os_type())
+            available_package_managers: vec![], // PackageManager::available_package_manager(info.os_type())
+            default_package_manager: PackageManager::Unknown, // PackageManager::default_package_manager(info.os_type())
             family: Family::get_family(info.os_type()),
         }
     }
 
+    #[inline]
     pub fn get_type(&self) -> Type {
         self.os_type
     }
 
+    #[inline]
     pub fn get_version(&self) -> &Version {
         &self.version
     }
 
+    #[inline]
     pub fn get_bitness(&self) -> Bitness {
         self.bitness
     }
 
+    #[inline]
     pub fn get_init(&self) -> Init {
         self.init
     }
 
-    pub fn get_package_manager(&self) -> PackageManager {
-        self.package_manager
+    #[inline]
+    pub fn get_supported_package_managers(&self) -> &[PackageManager] {
+        &self.supported_package_managers
     }
 
+    #[inline]
+    pub fn get_available_package_managers(&self) -> &[PackageManager] {
+        &self.available_package_managers
+    }
+
+    #[inline]
+    pub fn get_default_package_manager(&self) -> PackageManager {
+        self.default_package_manager
+    }
+
+    #[inline]
     pub fn get_family(&self) -> Family {
         self.family
     }

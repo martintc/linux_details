@@ -1,298 +1,227 @@
-use std::collections::HashMap;
-
 use proc_macro::TokenStream;
-use proc_macro2::Ident;
+use proc_macro2::{Delimiter, Ident, Literal, TokenStream as TokenStream2, TokenTree};
 use quote::quote;
-use syn::{
-    parenthesized,
-    parse::{Parse, ParseStream},
-    punctuated::Punctuated,
-    token::Paren,
-    AttrStyle, Attribute, Data, DataEnum, DeriveInput, LitStr, Token,
-};
+use venial::{parse_declaration, AttributeValue, Declaration, Enum, Punctuated};
 
-struct ParenPunctuated {
-    _paren: Paren,
-    types: Punctuated<Ident, Token![,]>,
-}
+fn get_punctuated_idents(tokens: TokenStream2) -> Punctuated<Ident> {
+    let mut res = Punctuated::new();
 
-impl Parse for ParenPunctuated {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        let types;
+    let mut tokens = tokens.into_iter().peekable();
 
-        Ok(Self {
-            _paren: parenthesized!(types in input),
-            types: Punctuated::<Ident, Token![,]>::parse_terminated(&types)?,
-        })
-    }
-}
-
-struct DisplayName {
-    _paren: Paren,
-    name: LitStr,
-}
-
-impl Parse for DisplayName {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        let name;
-        let paren = parenthesized!(name in input);
-
-        Ok(Self {
-            _paren: paren,
-            name: name.parse()?,
-        })
-    }
-}
-
-struct LinuxDetailsEnum {
-    name: Ident,
-    os_type_variants: HashMap<Ident, Vec<Ident>>,
-    main_in_os_types: HashMap<Ident, Vec<Ident>>,
-    default_ident: Ident,
-    default_display: proc_macro2::TokenStream,
-}
-
-#[proc_macro_derive(
-    LinuxDetailsEnum,
-    attributes(default_variant, os_types, display_name, main_in_os_types)
-)]
-pub fn linux_details_enum(input: TokenStream) -> TokenStream {
-    let LinuxDetailsEnum {
-        default_display, ..
-    } = linux_details_enum_internal(input);
-
-    (quote! {
-        #default_display
-    })
-    .into()
-}
-
-fn linux_details_enum_internal(input: TokenStream) -> LinuxDetailsEnum {
-    let DeriveInput {
-        ident: enum_name,
-        data,
-        ..
-    } = syn::parse(input).unwrap();
-    let DataEnum { variants, .. } = match data {
-        Data::Enum(enum_data) => enum_data,
-        _ => panic!("Only Enums are supported"),
-    };
-
-    let mut idents = vec![];
-    let mut strs = vec![];
-    let mut os_type_variants: HashMap<Ident, Vec<Ident>> = HashMap::new();
-    let mut main_in_os_types: HashMap<Ident, Vec<Ident>> = HashMap::new();
-    let mut default_ident = None;
-    let mut display_names = HashMap::new();
-
-    for variant in variants {
-        if !variant.fields.is_empty() {
-            panic!("Variants with fields are not supported");
+    loop {
+        if tokens.peek().is_none() {
+            break;
         }
 
-        let ident = variant.ident;
-        let ident_str = ident.to_string();
+        let ident = tokens.next().unwrap();
 
-        idents.push(ident.clone());
-        strs.push(ident_str.clone());
+        match ident {
+            TokenTree::Ident(ident) => res.push(
+                ident,
+                tokens.next().map(|tokens| match tokens {
+                    TokenTree::Punct(punct) => punct,
+                    _ => panic!("unexpected token {:?}", tokens),
+                }),
+            ),
+            _ => panic!("Has to be ident"),
+        }
+    }
 
-        for attr in variant.attrs {
-            if let Attribute {
-                style: AttrStyle::Outer,
-                path,
-                tokens,
-                ..
-            } = attr
-            {
-                let segments = path.segments;
+    res
+}
 
-                if let Some(attr_name) = segments.first() {
-                    let attr_name_str = attr_name.ident.to_string();
+#[derive(Debug)]
+struct LDEnumVarConf {
+    is_default_variant: bool,
+    os_types: Vec<Ident>,
+    default_in_os_types: Vec<Ident>,
+    display_name: Literal,
+}
 
-                    match attr_name_str.as_str() {
-                        "default_variant" => {
-                            if default_ident.is_none() {
-                                default_ident = Some(ident.clone());
+#[derive(PartialEq)]
+enum LDEnumVarConfFields {
+    IsDefaultVariant,
+    OsTypes,
+    DefaultInOsTypes,
+    DisplayName,
+    None,
+}
+
+impl<'b> From<&'b str> for LDEnumVarConfFields {
+    fn from(str: &'b str) -> Self {
+        match str {
+            "is_default_variant" => LDEnumVarConfFields::IsDefaultVariant,
+            "os_types" => LDEnumVarConfFields::OsTypes,
+            "default_in_os_types" => LDEnumVarConfFields::DefaultInOsTypes,
+            "display_name" => LDEnumVarConfFields::DisplayName,
+            _ => panic!("Unknown Field: {}", str),
+        }
+    }
+}
+
+impl From<(String, AttributeValue)> for LDEnumVarConf {
+    fn from((attr_name, attr_val): (String, AttributeValue)) -> Self {
+        let mut is_default_variant = false;
+        let mut os_types = vec![];
+        let mut default_in_os_types = vec![];
+        let mut display_name = None;
+
+        match attr_val {
+            AttributeValue::Group(_, token_trees) => {
+                let mut current_field = LDEnumVarConfFields::None;
+                let mut current_field_opened = false;
+                let mut current_field_value = false;
+
+                //let mut i = 0;
+                for token_tree in token_trees.iter() {
+                    /*if token_trees.len() > 1 && i == 1 {
+                        panic!("{}", token_tree);
+                    }
+
+                    i += 1;*/
+
+                    match token_tree {
+                        TokenTree::Group(group) => match current_field {
+                            LDEnumVarConfFields::OsTypes
+                            | LDEnumVarConfFields::DefaultInOsTypes => {
+                                current_field_opened = false;
+                                current_field_value = false;
+
+                                if group.delimiter() != Delimiter::Parenthesis {
+                                    panic!("Expected group delimiter to be Parenthesis");
+                                }
+
+                                let idents: Vec<Ident> = get_punctuated_idents(group.stream())
+                                    .iter()
+                                    .map(|(ident, _)| ident.clone())
+                                    .collect();
+
+                                if current_field == LDEnumVarConfFields::OsTypes {
+                                    os_types = idents;
+                                } else {
+                                    default_in_os_types = idents;
+                                }
+                            }
+
+                            _ => panic!("Unexpected Group: {}", group),
+                        },
+                        TokenTree::Ident(ident) => {
+                            let ident_str = ident.to_string();
+
+                            match current_field {
+                                LDEnumVarConfFields::None => {
+                                    current_field = ident_str.as_str().into();
+
+                                    if current_field == LDEnumVarConfFields::IsDefaultVariant {
+                                        is_default_variant = true;
+
+                                        current_field_value = true;
+                                        current_field_opened = false;
+                                    }
+                                }
+
+                                LDEnumVarConfFields::IsDefaultVariant => {
+                                    panic!("is_default_variant should be empty");
+                                }
+                                LDEnumVarConfFields::OsTypes => {
+                                    os_types.push(ident.clone());
+                                    current_field_value = true;
+                                }
+                                LDEnumVarConfFields::DefaultInOsTypes => {
+                                    default_in_os_types.push(ident.clone());
+                                    current_field_value = true;
+                                }
+                                LDEnumVarConfFields::DisplayName => {
+                                    panic!("display_name should be a string literal, not an Ident");
+                                }
                             }
                         }
-                        "os_types" => {
-                            let types: ParenPunctuated = syn::parse(tokens.into()).unwrap();
-
-                            for os_type in types.types {
-                                os_type_variants
-                                    .entry(os_type)
-                                    .or_default()
-                                    .push(ident.clone());
+                        TokenTree::Literal(literal) => match current_field {
+                            LDEnumVarConfFields::DisplayName => {
+                                display_name = Some(literal.clone());
+                                current_field_value = true;
+                                current_field_opened = false;
                             }
-                        }
-                        "display_name" => {
-                            let DisplayName { name, .. } = syn::parse(tokens.into()).unwrap();
-
-                            display_names.insert(ident_str.clone(), name.value());
-                        }
-                        "main_in_os_types" => {
-                            let types: ParenPunctuated = syn::parse(tokens.into()).unwrap();
-
-                            for os_type in types.types {
-                                main_in_os_types
-                                    .entry(ident.clone())
-                                    .or_default()
-                                    .push(os_type);
-                            }
-                        }
-                        _ => {}
+                            _ => panic!("Unexpected literal: {}", literal),
+                        },
+                        TokenTree::Punct(punct) => match punct.as_char() {
+                            '=' => match current_field {
+                                LDEnumVarConfFields::DisplayName if !current_field_opened => {
+                                    current_field_opened = true;
+                                }
+                                _ => panic!("Unexpected '='"),
+                            },
+                            ',' => match current_field {
+                                LDEnumVarConfFields::IsDefaultVariant => {
+                                    current_field_value = false;
+                                    current_field = LDEnumVarConfFields::None;
+                                }
+                                LDEnumVarConfFields::OsTypes
+                                | LDEnumVarConfFields::DefaultInOsTypes => {
+                                    if !current_field_opened {
+                                        current_field_value = false;
+                                        current_field = LDEnumVarConfFields::None;
+                                    } else if current_field_opened && !current_field_value {
+                                        panic!("Unexpected ','");
+                                    }
+                                }
+                                LDEnumVarConfFields::DisplayName => {
+                                    if !current_field_opened {
+                                        current_field_value = false;
+                                        current_field = LDEnumVarConfFields::None;
+                                    } else {
+                                        panic!("Unexpected ','");
+                                    }
+                                }
+                                LDEnumVarConfFields::None => panic!("Unexpected ','"),
+                            },
+                            _ => panic!("Unexpected punct: {}", punct),
+                        },
                     }
                 }
             }
+            _ => panic!("LDEnumVarConf::from: expected AttributeValue::Group"),
         }
-    }
 
-    if default_ident.is_none() {
-        panic!("No default variant marked for {}", enum_name);
-    }
-
-    let default_ident = default_ident.unwrap();
-
-    let default = quote! {
-        impl Default for #enum_name {
-            #[inline]
-            fn default() -> Self {
-                #enum_name::#default_ident
-            }
+        Self {
+            is_default_variant,
+            os_types,
+            default_in_os_types,
+            display_name: display_name
+                .unwrap_or_else(|| Literal::string(attr_name.to_lowercase().as_str())),
         }
-    };
-
-    let display = {
-        let package_manager_display_str = strs.iter().map(|str| {
-            display_names
-                .entry(str.clone())
-                .or_insert_with(|| str.to_lowercase())
-                .clone()
-        });
-
-        quote! {
-            impl std::fmt::Display for #enum_name {
-                fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-                    match self {
-                        #(
-                            #enum_name::#idents => write!(f, "{}", #package_manager_display_str),
-                        )*
-                    }
-                }
-            }
-        }
-    };
-
-    let default_display = quote! {
-        #default
-        #display
-    };
-
-    LinuxDetailsEnum {
-        name: enum_name,
-
-        os_type_variants,
-        default_ident,
-        default_display,
-        main_in_os_types,
     }
 }
 
-#[proc_macro_derive(
-    PackageManager,
-    attributes(default_variant, os_types, display_name, main_in_os_types)
-)]
-pub fn package_manager(input: TokenStream) -> TokenStream {
-    let LinuxDetailsEnum {
-        name,
-        os_type_variants,
-        main_in_os_types,
-        default_ident,
-        default_display,
-    } = linux_details_enum_internal(input);
+#[proc_macro_derive(LDEnum, attributes(ld_enum_conf))]
+pub fn ld_enum(input: TokenStream) -> TokenStream {
+    let type_decl = parse_declaration(input.into()).expect("Has to be an enum declaration");
 
-    let available_package_managers = {
-        let arms = os_type_variants.iter().map(|(os_type, package_managers)| {
-            quote! {
-                os_info::Type::#os_type => vec![#(#name::#package_managers),*],
-            }
-        });
+    match type_decl {
+        Declaration::Enum(Enum { name, variants, .. }) => {
+            for (variant, _) in variants.iter() {
+                let attributes = &variant.attributes;
 
-        quote! {
-            impl #name {
-                pub fn available_package_managers(os_type: os_info::Type) -> Vec<Self> {
-                    match os_type {
-                        #(#arms),*,
-                        _ => vec![],
+                let ld_conf = attributes.iter().find_map(|attr| {
+                    let attr_name = attr.path.last().unwrap().to_string();
+
+                    if attr_name.as_str() == "ld_enum_conf" {
+                        let val = &attr.value;
+                        let var_conf = LDEnumVarConf::from((attr_name, val.clone()));
+
+                        Some(var_conf)
+                    } else {
+                        None
                     }
+                });
+
+                if let Some(ld_conf) = ld_conf {
+                    todo!("Implement LDEnum trait for {}", name);
                 }
             }
+
+            (quote! {}).into()
         }
-    };
-
-    let main_package_manager = {
-        let arms = main_in_os_types.iter().map(|(package_manager, os_types)| {
-            quote! {
-                #(#os_types)|* => #name::#package_manager
-            }
-        });
-
-        quote! {
-            impl #name {
-                pub fn main_package_manager(os_type: os_info::Type) -> Self {
-                    match os_type {
-                        #(#arms),*,
-                        _ => #name::#default_ident,
-                    }
-                }
-            }
-        }
-    };
-
-    (quote! {
-        #available_package_managers
-        #main_package_manager
-        #default_display
-    })
-    .into()
-}
-
-#[proc_macro_derive(Family, attributes(default_variant, os_types, display_name))]
-pub fn family(input: TokenStream) -> TokenStream {
-    let LinuxDetailsEnum {
-        name,
-        os_type_variants,
-        default_ident,
-        default_display,
-        ..
-    } = linux_details_enum_internal(input);
-
-    let get_family = {
-        let arms = os_type_variants.iter().flat_map(|(os_type, variants)| {
-            variants.iter().cloned().map(|variant| {
-                let os_type = os_type.clone();
-
-                quote! {
-                    os_info::Type::#os_type => #name::#variant
-                }
-            })
-        });
-
-        quote! {
-            impl #name {
-                pub fn get_family(os_type: os_info::Type) -> Self {
-                    match os_type {
-                        #(#arms),*,
-                        _ => #name::#default_ident
-                    }
-                }
-            }
-        }
-    };
-
-    (quote! {
-        #get_family
-        #default_display
-    })
-    .into()
+        _ => panic!("Has to be an enum declaration"),
+    }
 }

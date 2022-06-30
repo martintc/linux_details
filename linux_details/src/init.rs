@@ -1,8 +1,8 @@
 use enum_iterator::Sequence;
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, LinuxDetailsEnum, Sequence)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, LDEnum, Sequence)]
 pub enum Init {
-    #[default_variant]
+    #[ld_enum_conf(is_default_variant)]
     Unknown,
     Launchd,
     Openrc,
@@ -16,11 +16,12 @@ pub enum Init {
 impl Init {
     pub fn get_init() -> Self {
         // TODO: need to implement a way to get the init system of the current OS
-        Self::default()
+        //Self::default()
+        Self::Unknown
     }
 }
 
-mod tests {
+/*mod tests {
     #[allow(unused_imports)]
     use super::Init;
 
@@ -45,4 +46,4 @@ mod tests {
         let package_manager = Init::get_init();
         assert_eq!(package_manager, Init::Unknown);
     }
-}
+}*/
