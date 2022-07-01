@@ -1,5 +1,7 @@
 use enum_iterator::Sequence;
 
+use linux_details_macros::LDEnum;
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, LDEnum, Sequence)]
 pub enum Family {
     #[ld_enum_conf(is_default_variant)]
@@ -23,13 +25,6 @@ pub enum Family {
     SuseBased,
     #[ld_enum_conf(display_name = "ubuntu-based", os_types(Ubuntu, Mint, Pop))]
     UbuntuBased,
-}
-
-impl Family {
-    pub fn get_family(os_type: os_info::Type) -> Self {
-        // TODO(tukanoid): need to implement a way to get the family of the current OS
-        Self::Unknown
-    }
 }
 
 /*mod tests {

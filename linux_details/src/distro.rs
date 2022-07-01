@@ -41,7 +41,7 @@ impl Distro {
             supported_package_managers: vec![], // PackageManager::supported_package_managers(info.os_type())
             available_package_managers: vec![], // PackageManager::available_package_manager(info.os_type())
             default_package_manager: PackageManager::Unknown, // PackageManager::default_package_manager(info.os_type())
-            family: Family::get_family(info.os_type()),
+            family: Family::family_of_os_type(info.os_type()),
         }
     }
 

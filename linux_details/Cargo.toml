@@ -26,3 +26,4 @@ linux_details_macros = { path = "../linux_details_macros" }
 
 os_info = "3.4.0"
 enum-iterator = "1.1.2"
+which = "4.2.5"

@@ -1,5 +1,7 @@
 use enum_iterator::Sequence;
 
+use linux_details_macros::LDEnum;
+
 // TODO: do bit more research on this part to set proper defaults
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, LDEnum, Sequence)]
 pub enum PackageManager {

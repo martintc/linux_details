@@ -1,6 +1,3 @@
-#[macro_use]
-extern crate linux_details_macros;
-
 pub mod distro;
 pub mod family;
 pub mod init;
